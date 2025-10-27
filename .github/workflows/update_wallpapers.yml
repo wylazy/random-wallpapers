@@ -1,0 +1,52 @@
+name: Update Bing Wallpapers
+
+on:
+  schedule:
+    # 每天凌晨2点运行 (UTC时间，对应北京时间10点)
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write # 允许写入仓库内容
+
+jobs:
+  update-wallpapers:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+          pip install beautifulsoup4
+
+      - name: Run wallpaper download script
+        run: python download_bing_wallpapers.py
+
+      - name: Update all_wallpapers.json and generate functions
+        run: |
+          python merge_json.py
+          python generate_functions.py
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git status --porcelain
+          echo "modified=$(if [ `git status --porcelain | wc -l` -gt 0 ]; then echo true; else echo false; fi)" >> $GITHUB_OUTPUT
+
+      - name: Commit and push if changed
+        if: steps.git-check.outputs.modified == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          git commit -m "Update wallpapers data [skip ci]"
+          git push
