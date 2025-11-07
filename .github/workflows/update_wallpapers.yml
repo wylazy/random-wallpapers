@@ -50,3 +50,7 @@ jobs:
           git add -A
           git commit -m "Update wallpapers data [skip ci]"
           git push
+
+      - name: upload image
+        run: |
+          python upload_image.py --upload-limit 1 --aws-access-key-id ${{ secrets.AWS_ACCESS_KEY_ID }} --aws-secret-access-key ${{ secrets.AWS_SECRET_ACCESS_KEY }} --endpoint-url ${{ secrets.S3_ENDPOINT_URL }} --bucket-name ${{ secrets.S3_BUCKET_NAME }}
